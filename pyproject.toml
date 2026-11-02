@@ -1,0 +1,68 @@
+[project]
+name = "ai-guardrails"
+version = "0.1.0"
+description = "Provider-agnostic guardrails layer for Python AI applications, built on Guardrails AI."
+readme = "README.md"
+authors = [
+    { name = "Aryan Bhattarai", email = "aryan.bhattarai@infodev.com.np" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.162.0",
+    "guardrails-ai>=0.11.0",
+    "guardrails-ai-ban-list>=0.1.0",
+    "pydantic>=2.14.2",
+    "pydantic-settings>=2.16.2",
+    "pyyaml>=6.0.3",
+    "typer>=0.19.2",
+    "uvicorn>=0.54.0",
+]
+
+[project.scripts]
+ai-guardrails = "ai_guardrails.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+    "ruff>=0.17.3",
+    "types-pyyaml>=6.0.12.20261030",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src"]
+
+[[tool.mypy.overrides]]
+# Guardrails AI and its validator packages ship without complete type hints.
+module = ["guardrails.*", "guardrails_ai.*"]
+ignore_missing_imports = true
+follow_untyped_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore:Use .*model_dump:DeprecationWarning",
+    "ignore::DeprecationWarning:typer.*",
+]
+markers = [
+    "slow: tests that need model downloads or are otherwise expensive (deselect with -m 'not slow')",
+]
