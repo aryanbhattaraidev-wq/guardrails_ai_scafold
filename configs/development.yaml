@@ -1,0 +1,5 @@
+# Small override layered over default.yaml:
+#   ai-guardrails config-check -c configs/default.yaml -c configs/development.yaml
+app:
+  environment: development
+  log_level: DEBUG

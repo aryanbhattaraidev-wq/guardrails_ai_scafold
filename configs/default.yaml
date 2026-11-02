@@ -1,0 +1,115 @@
+# Base policy configuration. Every validator listed here is installed and
+# runnable out of the box (no model downloads, no network).
+#
+# Environment variables can be referenced as ${NAME} or ${NAME:-default}.
+# Never put secrets in this file.
+
+app:
+  name: ai-guardrails
+  environment: development
+  log_level: INFO
+
+runtime:
+  default_profile: default
+  validation_timeout_seconds: 5
+  fail_closed_on_validator_error: true
+  on_unsupported_content: block   # block | skip
+  log_content: false              # must stay false in production
+
+api:
+  host: 127.0.0.1
+  port: 8000
+  max_text_chars: 100000
+  auth_enabled: false             # must be true if host is not a loopback address
+  api_key_env: AI_GUARDRAILS_API_KEY
+
+profiles:
+  default:
+    input:
+      enabled: true
+      validators:
+        - name: non_empty
+          on_fail: block
+
+        - name: input_length
+          on_fail: block
+          params:
+            max_characters: 12000
+
+        # Heuristic phrase list, NOT a prompt-injection classifier. It catches
+        # only obvious wording and is trivially evaded; see docs/security_notes.md.
+        - name: ban_list
+          on_fail: block
+          params:
+            banned_words:
+              - ignore previous instructions
+              - ignore all previous instructions
+              - disregard the system prompt
+              - reveal your system prompt
+            max_l_dist: 0
+
+        # Basic pattern-based PII check (not an ML detector).
+        - name: pii_regex
+          on_fail: redact
+          params:
+            entities: [EMAIL_ADDRESS, PHONE_NUMBER, US_SSN, CREDIT_CARD]
+
+    output:
+      enabled: true
+      validators:
+        - name: output_length
+          on_fail: block
+          params:
+            max_characters: 20000
+
+        - name: pii_regex
+          on_fail: redact
+          params:
+            entities: [EMAIL_ADDRESS, PHONE_NUMBER, US_SSN, CREDIT_CARD]
+
+    # Retrieved documents and tool results are untrusted data. These stages are
+    # off in `default`; see `internal_assistant` for an enabled example.
+    retrieval:
+      enabled: false
+    tool_input:
+      enabled: false
+    tool_output:
+      enabled: false
+
+  internal_assistant:
+    input:
+      enabled: true
+      validators:
+        - name: non_empty
+          on_fail: block
+    output:
+      enabled: true
+      validators:
+        - name: output_length
+          on_fail: block
+          params:
+            max_characters: 50000
+    retrieval:
+      enabled: true
+      validators:
+        - name: ban_list
+          on_fail: block
+          params:
+            banned_words:
+              - ignore previous instructions
+              - ignore all previous instructions
+            max_l_dist: 0
+    tool_input:
+      enabled: true
+      validators:
+        - name: input_length
+          on_fail: block
+          params:
+            max_characters: 20000
+    tool_output:
+      enabled: true
+      validators:
+        - name: output_length
+          on_fail: block
+          params:
+            max_characters: 50000

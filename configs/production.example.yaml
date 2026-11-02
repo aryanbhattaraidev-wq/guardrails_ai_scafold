@@ -1,0 +1,14 @@
+# Example production override layered over default.yaml. Copy, adjust, review.
+#   ai-guardrails config-check -c configs/default.yaml -c configs/production.yaml
+app:
+  environment: production
+  log_level: INFO
+
+runtime:
+  log_content: false   # rejected at startup if true in production
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  auth_enabled: true   # required for a non-loopback host
+  api_key_env: AI_GUARDRAILS_API_KEY   # the key itself comes from the environment
